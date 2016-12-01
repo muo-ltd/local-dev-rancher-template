@@ -62,7 +62,7 @@ function addLocalAsHost() {
 	echo "Extract host command"
 	curl --silent http://localhost:8080/v1/projects/1a5/registrationtokens > rancher.txt
 	echo "Execute add command"
-	cat rancher.txt | awk -F, '{for (i=1;i<=NF;i++)print $i}' | grep command | awk '{ gsub("\"", ""); gsub("command:sudo ", ""); print}' | sh
+	cat rancher.txt | awk -F, '{for (i=1;i<=NF;i++)print $i}' | grep command | awk '{ gsub("\"", ""); gsub("command:sudo ", ""); gsub("--privileged -v", "--privileged -e CATTLE_AGENT_IP=192.168.65.2 -v"); print}' | sh
 	rm -f rancher.txt 
 	echo "Localhost Added"
 }
