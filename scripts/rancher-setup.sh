@@ -16,6 +16,16 @@ function stopAndDeleteContainerByPartialImageName() {
 	done
 }
 
+function stopAndDeleteContainerByName() {
+	local IMAGE_NAME=$1
+	for ID in $(docker ps -q --filter=NAME=$IMAGE_NAME); do
+		docker stop $ID
+	done
+	for ID in $(docker ps -q -a --filter=NAME=$IMAGE_NAME); do
+		docker rm $ID
+	done
+}
+
 function deleteDanglingVolumes() {
 	for ID in $(docker volume ls -qf dangling=true); do
 		docker volume rm $ID
@@ -87,11 +97,58 @@ function createRancherApiKey() {
     echo export RANCHER_SECRET_KEY=$SECRET_KEY\; >> rancher-env.sh
 }
 
+function buildProxy() {
+	local ports=$(echo $1 | tr ";" "\n")
+	local configstring=""
+
+	echo "Build Proxy"
+	
+	echo "# Generated from template " > ./rancherhaproxy/haproxy.cfg 
+
+	for line in $(cat ./rancherhaproxy/haproxy.cfg_template)
+	do
+		if [ "$line" == '#SUB' ]; then
+			for i in $ports
+			do
+				echo " "  >> ./rancherhaproxy/haproxy.cfg 			
+				echo "frontend frontend-$i" >>  ./rancherhaproxy/haproxy.cfg 
+				echo "    bind :$i" >> ./rancherhaproxy/haproxy.cfg  
+				echo "    default_backend backend-$i"  >> ./rancherhaproxy/haproxy.cfg  
+				echo " "  >> ./rancherhaproxy/haproxy.cfg  
+				echo "backend backend-$i"  >> ./rancherhaproxy/haproxy.cfg  
+				echo "    server server1 192.168.65.2:$i maxconn 32"  >> ./rancherhaproxy/haproxy.cfg  
+			done
+		fi 
+		echo $line >> ./rancherhaproxy/haproxy.cfg
+	done
+
+	docker build rancherhaproxy/ --tag rancherproxy
+}
+
+function runProxy() {
+	local ports=$(echo $1 | tr ";" "\n")
+	local portsString=""
+	
+	for i in $ports
+	do
+		echo "$i"
+		portsString="$portsString -p $i:$i"
+	done
+
+	eval "docker run $portsString -d --name rancherproxy rancherproxy"
+}
+
+function stopAndRemoveProxy() {
+	stopAndDeleteContainerByName rancherproxy
+}
+
 function up() {
+	local proxysettings=$1
 	createRancherServer
 	waitForRancherToStart
 	addLocalAsHost
 	createRancherApiKey
+	buildProxy $proxysettings
 	echo "Complete"
 }
 

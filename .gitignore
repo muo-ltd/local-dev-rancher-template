@@ -1,3 +1,4 @@
 rancher-env.sh
+rancherhaproxy/haproxy.cfg
 
 **/*.DS_Store
