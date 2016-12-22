@@ -91,8 +91,7 @@ function createRancherApiKey() {
         rm rancher-env.sh
     fi
 
-    echo export LD_RANCHER_ACCESS_KEY=$ACCESS_KEY\; >> rancher-env.sh
-    echo export LD_RANCHER_SECRET_KEY=$SECRET_KEY\; >> rancher-env.sh
+    echo export RANCHER_URL=http://localhost:8080/\; >> rancher-env.sh
     echo export RANCHER_ACCESS_KEY=$ACCESS_KEY\; >> rancher-env.sh
     echo export RANCHER_SECRET_KEY=$SECRET_KEY\; >> rancher-env.sh
 }
